@@ -1,48 +1,20 @@
 import MyHeader from './MyHeader';
 import MyButton from './MyButton';
 import { useNavigate } from 'react-router-dom';
-import { useContext, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import EmotionItem from './EmotionItem';
 import { DiaryDispatchContext } from "./../App.js"
+import { getStringDate } from '../util/date.js';
+import { emotionList } from '../util/emotion';
 
-const emotionList = [
-  {
-    emotion_id: 1,
-    emotion_img: process.env.PUBLIC_URL + '/assets/emotion1.png',
-    emotion_descript: '완전 좋음',
-  },
-  {
-    emotion_id: 2,
-    emotion_img: process.env.PUBLIC_URL + '/assets/emotion2.png',
-    emotion_descript: '좋음',
-  },
-  {
-    emotion_id: 3,
-    emotion_img: process.env.PUBLIC_URL + '/assets/emotion3.png',
-    emotion_descript: '보통',
-  },
-  {
-    emotion_id: 4,
-    emotion_img: process.env.PUBLIC_URL + '/assets/emotion4.png',
-    emotion_descript: '별로',
-  },
-  {
-    emotion_id: 5,
-    emotion_img: process.env.PUBLIC_URL + '/assets/emotion5.png',
-    emotion_descript: '완전 별로',
-  },
-];
 
-const getStringDate = (date) => {
-  return date.toISOString().slice(0, 10);
-};
 
-const DiaryEditor = () => {
+const DiaryEditor = ({isEdit, originData}) => {
 const contentRef = useRef();
 const [content, setContent] = useState("");
 const [emotion, setEmotion] = useState(3);
 const [date, setDate] = useState(getStringDate(new Date()));
-const { onCreate } = useContext(DiaryDispatchContext);
+const { onCreate, onEdit } = useContext(DiaryDispatchContext);
 
 const handleClickEmote = (emotion) => {
   setEmotion(emotion);
@@ -53,10 +25,26 @@ const handleSubmit = () => {
     contentRef.current.focus();
     return ;
   }
+
+  if(window.confirm(isEdit? "일기를 수정하시겠습니까?" : "새로운 일기를 작성하시겠습니까?")) {
+    if(!isEdit) {
+      onCreate(date, content, emotion);
+    } else {
+      onEdit(originData.id, date, content, emotion)
+    }
+  }
   
-  onCreate(date, content, emotion);
+  
   navigate('/', {replace : true});
-}
+};
+
+useEffect(()=> {
+  if(isEdit) {
+    setDate(getStringDate(new Date(parseInt(originData.date))));
+    setEmotion(originData.emotion);
+    setContent(originData.content);
+  }
+}, [isEdit, originData])
 
 const navigate = useNavigate();
 
@@ -64,7 +52,7 @@ const navigate = useNavigate();
   return (
     <div className="DiaryEditor">
       <MyHeader
-        headText={'NeW'}
+        headText={isEdit ? 'Edit' : 'NeW'}
         leftChild={<MyButton text={'< back'} onClick={() => navigate(-1)} />}
       />
       <div>
